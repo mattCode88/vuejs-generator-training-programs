@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore Schede</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="lib.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+</head>
+<body>
+
+    <div id="app" class="container">
+
+        <header v-if="!schedeComplete">
+            <h1>Generatore programmi di allenamento</h1>
+        </header>
+
+        <template v-if="!schedeComplete">
+            <main class="main row">
+
+                <nav class="navbar col-3">
+                    <h3 class="title">Schede 
+                        <span>
+                            <ion-icon 
+                            title="Aggiungi Scheda" 
+                            @click="aggiungiScheda" 
+                            name="add"
+                            class="pointer">
+                            </ion-icon>
+                        </span>
+                    </h3>
+                    <ul class="lista-schede">
+                        <li 
+                        v-for="(scheda, index) in arraySchede"
+                        class="scheda flex space-between"
+                        :class="{'scheda-selected' : index === schedaSelezionata}">
+                            <div>
+                                <span class="scheda-titolo pointer" @click="selezionaScheda(index)">{{ scheda.scheda }}</span>
+                                <ion-icon v-if="scheda.confermata" name="checkmark"></ion-icon>
+                            </div>
+                            <ion-icon 
+                            @click="rimuoviScheda(index)" 
+                            name="close"
+                            class="pointer">
+                            </ion-icon>
+                        </li>
+                        <li v-if="arraySchede.length > 0"><button @click="elaboraProgramma" class="btn-scheda-confirm">Elabora</button></li>
+                        <li class="error" v-if="erroreDiElaborazione && arraySchede.length > 0">*Compila tutte le schede</li>
+                    </ul>
+                </nav>
+                <section class="section-main col-9">
+                    <template v-if="arraySchede.length > 0">
+                        <h3 class="title">
+                            {{ arraySchede.length > 0 ? arraySchede[schedaSelezionata].scheda : '' }} 
+                            <span>
+                                <ion-icon 
+                                title="Aggiungi Esercizio" 
+                                @click="aggiungiEsercizio" 
+                                name="add"
+                                class="pointer">
+                                </ion-icon>
+                            </span>
+                        </h3>
+                        <div class="container-specifiche" :class="{'error-border' : erroreDiCompilazione, 'scheda-confermata' : arraySchede[schedaSelezionata].confermata}">
+                            <form @submit.prevent="confermaScheda">
+                                <div class="specifica" v-for="(specifica, index) in arraySchede[schedaSelezionata].specifiche">
+                                    <h3 class="title flex space-between">
+                                        <div>Esercizio{{ index + 1 }}</div>
+                                        <ion-icon 
+                                        @click="rimuoviEsercizio(index)" 
+                                        name="close"
+                                        class="pointer">
+                                        </ion-icon>
+                                    </h3>
+                                    <div class="input-specifica">
+                                        <h4 class="subtitle">Esercizio</h4>
+                                        <input
+                                        class="basic-input input-text"
+                                        type="text"
+                                        :value="arraySchede[schedaSelezionata].specifiche.length > 0 ? arraySchede[schedaSelezionata].specifiche[index].esercizio : ''" >
+                                    </div>
+                                    <div class="input-specifica">
+                                        <h4 class="subtitle">Ripetizioni</h4>
+                                        <input 
+                                        class="basic-input input-number" 
+                                        type="number"
+                                        :value="arraySchede[schedaSelezionata].specifiche.length > 0 ? arraySchede[schedaSelezionata].specifiche[index].ripetizioni : ''" >
+                                    </div>
+                                    <div class="input-specifica">
+                                        <h4 class="subtitle">Serie</h4>
+                                        <input 
+                                        class="basic-input input-number" 
+                                        type="number"
+                                        :value="arraySchede[schedaSelezionata].specifiche.length > 0 ? arraySchede[schedaSelezionata].specifiche[index].serie : ''" >
+                                    </div>
+                                    <div class="input-specifica">
+                                        <h4 class="subtitle">Recupero</h4>
+                                        <input 
+                                        class="basic-input input-number" 
+                                        type="number"
+                                        :value="arraySchede[schedaSelezionata].specifiche.length > 0 ? arraySchede[schedaSelezionata].specifiche[index].recupero : ''" >
+                                    </div>
+                                    <div class="input-specifica">
+                                        <h4 class="subtitle">Descrizione</h4>
+                                        <textarea 
+                                        class="basic-input"
+                                        cols="30" 
+                                        rows="10"
+                                        :value="arraySchede[schedaSelezionata].specifiche.length > 0 ? arraySchede[schedaSelezionata].specifiche[index].descrizione : ''" >
+                                        </textarea>
+                                    </div>
+                                </div>
+                                <button class="btn-scheda-confirm" type="submit">Conferma</button>
+                                <p class="error" v-if="erroreDiCompilazione">*Compila tutti i campi</p>
+                            </form>  
+                        </div>
+                    </template>
+                </section>
+
+            </main>
+        </template>
+            
+        <template v-if="schedeComplete">
+            <div class="container-elaborazione">
+                <div 
+                class="scheda-elaborata"
+                v-for="scheda in arraySchede">
+                    <h2>{{scheda.scheda}}</h2> 
+                    <div class="esercizio-elaborato row" v-for="(esercizio, index) in scheda.specifiche">
+                        <div class="col-2 col-lg-3 col-sm-4 col-xs-5 bold">Esercizio{{ index + 1}}:</div>
+                        <div class="col-10 col-lg-9 col-sm-8 col-xs-7">{{esercizio.esercizio}}</div>
+                        <div class="col-2 col-lg-3 col-sm-4 col-xs-5 bold">Ripetizioni:</div>
+                        <div class="col-10 col-lg-9 col-sm-8 col-xs-7">{{esercizio.ripetizioni}}</div>
+                        <div class="col-2 col-lg-3 col-sm-4 col-xs-5 bold">Serie:</div>
+                        <div class="col-10 col-lg-9 col-sm-8 col-xs-7">{{esercizio.serie}}</div>
+                        <div class="col-2 col-lg-3 col-sm-4 col-xs-5 bold">Recupero:</div>
+                        <div class="col-10 col-lg-9 col-sm-8 col-xs-7">{{esercizio.recupero}}'</div>
+                        <div class="col-2 col-lg-3 col-sm-4 col-xs-5 bold">Descrizione:</div>
+                        <div class="col-10 col-lg-9 col-sm-8 col-xs-7">{{esercizio.descrizione}}</div>
+                    </div>
+                </div>
+                <button class="btn-print" v-if="!print" @click="stampaProgramma">Stampa</button>
+                <button class="btn-print" v-if="!print" @click="resetApp">Reset</button>
+            </div>
+        </template>
+
+    </div>
+
+    <script type="module" src="https://unpkg.com/ionicons@4.5.10-0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule="" src="https://unpkg.com/ionicons@4.5.10-0/dist/ionicons/ionicons.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
